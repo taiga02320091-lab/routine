@@ -4,146 +4,356 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ルーティン</title>
+
 <style>
+*{box-sizing:border-box}
+
 body{
-  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
-  background:#f5f5f7;
-  margin:0;
-  padding:20px;
-  color:#222;
+ margin:0;
+ background:#f5f5f7;
+ color:#222;
+ font-family:-apple-system,BlinkMacSystemFont,sans-serif;
 }
-h1{font-size:30px}
+
+header{
+ padding:28px 18px 15px;
+}
+
+h1{
+ margin:0;
+ font-size:32px;
+}
+
+.date{
+ color:#777;
+ margin-top:4px;
+}
+
+main{
+ max-width:700px;
+ margin:auto;
+ padding:10px 14px 40px;
+}
+
 .card{
-  background:white;
-  padding:18px;
-  border-radius:18px;
-  margin-bottom:15px;
+ background:white;
+ border-radius:20px;
+ padding:16px;
+ margin-bottom:14px;
+ box-shadow:0 3px 12px #0001;
 }
+
+.title{
+ font-size:21px;
+ font-weight:bold;
+}
+
 input{
-  padding:10px;
-  border:1px solid #ccc;
-  border-radius:10px;
-  font-size:16px;
-  width:100%;
-  box-sizing:border-box;
-  margin:5px 0;
+ font:inherit;
 }
+
+input[type=text],
+input[type=time]{
+ width:100%;
+ padding:11px;
+ border:1px solid #ddd;
+ border-radius:12px;
+ margin-top:8px;
+}
+
 button{
-  padding:11px 15px;
-  border:0;
-  border-radius:10px;
-  background:#222;
-  color:white;
-  font-weight:bold;
-  margin:4px 0;
+ border:0;
+ border-radius:12px;
+ padding:10px 14px;
+ background:#222;
+ color:white;
+ font-weight:bold;
 }
+
+.days{
+ display:flex;
+ gap:5px;
+ margin:12px 0;
+}
+
+.days button{
+ background:#eee;
+ color:#222;
+}
+
+.days button.active{
+ background:#222;
+ color:white;
+}
+
 .task{
-  display:grid;
-  grid-template-columns:90px 1fr 35px;
-  gap:5px;
-  align-items:center;
+ display:grid;
+ grid-template-columns:80px 1fr 35px;
+ gap:7px;
+ margin-top:10px;
+ align-items:center;
 }
-.delete{background:#e55}
+
+.add{
+ width:100%;
+ margin-top:12px;
+}
+
+.delete{
+ background:#ffe5e5;
+ color:#b00000;
+}
+
+.tabs{
+ display:flex;
+ gap:7px;
+ overflow:auto;
+ margin-bottom:12px;
+}
+
+.tab{
+ white-space:nowrap;
+ background:#eee;
+ color:#222;
+}
+
+.tab.active{
+ background:#222;
+ color:white;
+}
 </style>
 </head>
 
 <body>
 
+<header>
 <h1>ルーティン</h1>
+<div class="date" id="date"></div>
+</header>
+
+<main>
+
+<div class="tabs" id="tabs"></div>
 
 <div id="app"></div>
 
 <button onclick="addRoutine()">＋ ルーティンを追加</button>
 
+</main>
+
 <script>
 
-let routines=JSON.parse(localStorage.getItem("routines")||"[]");
+const DAYS=["日","月","火","水","木","金","土"];
+
+let routines=JSON.parse(
+ localStorage.getItem("routines") || "[]"
+);
+
+let selected=0;
+
+if(routines.length===0){
+
+ routines=[
+  {
+   title:"平日の朝",
+   days:[1,2,3,4,5],
+   tasks:[
+    {time:"06:30",text:"起きる",done:false},
+    {time:"06:35",text:"着替える",done:false},
+    {time:"06:50",text:"朝ごはん",done:false}
+   ]
+  },
+  {
+   title:"夜のルーティン",
+   days:[0,1,2,3,4,5,6],
+   tasks:[
+    {time:"21:00",text:"明日の準備",done:false},
+    {time:"21:15",text:"歯みがき",done:false}
+   ]
+  }
+ ];
+
+ save();
+
+}
 
 function save(){
-  localStorage.setItem("routines",JSON.stringify(routines));
-  render();
+
+ localStorage.setItem(
+  "routines",
+  JSON.stringify(routines)
+ );
+
+ render();
+
 }
 
 function addRoutine(){
-  routines.push({
-    title:"新しいルーティン",
-    tasks:[]
-  });
-  save();
+
+ routines.push({
+  title:"新しいルーティン",
+  days:[new Date().getDay()],
+  tasks:[]
+ });
+
+ selected=routines.length-1;
+
+ save();
+
 }
 
-function addTask(i){
-  routines[i].tasks.push({
-    time:"07:00",
-    text:"やること"
-  });
-  save();
+function addTask(){
+
+ routines[selected].tasks.push({
+  time:"07:00",
+  text:"やること",
+  done:false
+ });
+
+ save();
+
 }
 
-function deleteTask(i,j){
-  routines[i].tasks.splice(j,1);
-  save();
+function deleteTask(i){
+
+ routines[selected].tasks.splice(i,1);
+
+ save();
+
 }
 
-function deleteRoutine(i){
-  routines.splice(i,1);
-  save();
+function deleteRoutine(){
+
+ if(routines.length<=1){
+
+  alert("最後のルーティンは削除できません");
+
+  return;
+
+ }
+
+ routines.splice(selected,1);
+
+ selected=Math.max(0,selected-1);
+
+ save();
+
+}
+
+function toggleDay(day){
+
+ let days=routines[selected].days;
+
+ let index=days.indexOf(day);
+
+ if(index===-1){
+
+  days.push(day);
+
+ }else{
+
+  days.splice(index,1);
+
+ }
+
+ save();
+
 }
 
 function render(){
 
-  let app=document.getElementById("app");
+ let now=new Date();
 
-  if(routines.length===0){
-    app.innerHTML=
-      '<div class="card">まだルーティンがありません。<br>下のボタンから追加しよう！</div>';
-    return;
-  }
+ document.getElementById("date").textContent=
+  now.getFullYear()+"年"+
+  (now.getMonth()+1)+"月"+
+  now.getDate()+"日（"+
+  DAYS[now.getDay()]+"）";
 
-  app.innerHTML=routines.map((r,i)=>`
+ document.getElementById("tabs").innerHTML=
+  routines.map((r,i)=>
+   `<button class="tab ${i===selected?"active":""}"
+    onclick="selected=${i};render()">
+    ${r.title}
+   </button>`
+  ).join("")+
+  `<button class="tab" onclick="addRoutine()">＋</button>`;
 
-    <div class="card">
+ let r=routines[selected];
 
-      <input
-        value="${r.title}"
-        onchange="routines[${i}].title=this.value;save()"
-      >
+ document.getElementById("app").innerHTML=`
 
-      ${r.tasks.map((t,j)=>`
+ <div class="card">
 
-        <div class="task">
+  <div class="title">ルーティン設定</div>
 
-          <input
-            type="time"
-            step="300"
-            value="${t.time}"
-            onchange="routines[${i}].tasks[${j}].time=this.value;save()"
-          >
+  <input
+   type="text"
+   value="${r.title}"
+   onchange="routines[selected].title=this.value;save()">
 
-          <input
-            value="${t.text}"
-            onchange="routines[${i}].tasks[${j}].text=this.value;save()"
-          >
+  <div class="days">
 
-          <button class="delete"
-            onclick="deleteTask(${i},${j})">×</button>
+   ${DAYS.map((d,i)=>
+    `<button
+     class="${r.days.includes(i)?"active":""}"
+     onclick="toggleDay(${i})">
+     ${d}
+    </button>`
+   ).join("")}
 
-        </div>
+  </div>
 
-      `).join("")}
+  <button class="delete"
+   onclick="deleteRoutine()">
+   このルーティンを削除
+  </button>
 
-      <button onclick="addTask(${i})">
-        ＋ 予定を追加
-      </button>
+ </div>
 
-      <button class="delete"
-        onclick="deleteRoutine(${i})">
-        ルーティン削除
-      </button>
+ <div class="card">
 
-    </div>
+  <div class="title">予定</div>
 
-  `).join("");
+  ${r.tasks.map((t,i)=>`
+
+   <div class="task">
+
+    <input
+     type="time"
+     step="300"
+     value="${t.time}"
+     onchange="
+      routines[selected].tasks[${i}].time=this.value;
+      save()
+     ">
+
+    <input
+     type="text"
+     value="${t.text}"
+     onchange="
+      routines[selected].tasks[${i}].text=this.value;
+      save()
+     ">
+
+    <button class="delete"
+     onclick="deleteTask(${i})">
+     ×
+    </button>
+
+   </div>
+
+  `).join("")}
+
+  <button class="add"
+   onclick="addTask()">
+   ＋ 予定を追加
+  </button>
+
+ </div>
+
+ `;
+
 }
 
 render();
