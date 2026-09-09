@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ルーティン</title>
+<style>
+body{
+  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+  background:#f5f5f7;
+  margin:0;
+  padding:20px;
+  color:#222;
+}
+h1{font-size:30px}
+.card{
+  background:white;
+  padding:18px;
+  border-radius:18px;
+  margin-bottom:15px;
+}
+input{
+  padding:10px;
+  border:1px solid #ccc;
+  border-radius:10px;
+  font-size:16px;
+  width:100%;
+  box-sizing:border-box;
+  margin:5px 0;
+}
+button{
+  padding:11px 15px;
+  border:0;
+  border-radius:10px;
+  background:#222;
+  color:white;
+  font-weight:bold;
+  margin:4px 0;
+}
+.task{
+  display:grid;
+  grid-template-columns:90px 1fr 35px;
+  gap:5px;
+  align-items:center;
+}
+.delete{background:#e55}
+</style>
+</head>
+
+<body>
+
+<h1>ルーティン</h1>
+
+<div id="app"></div>
+
+<button onclick="addRoutine()">＋ ルーティンを追加</button>
+
+<script>
+
+let routines=JSON.parse(localStorage.getItem("routines")||"[]");
+
+function save(){
+  localStorage.setItem("routines",JSON.stringify(routines));
+  render();
+}
+
+function addRoutine(){
+  routines.push({
+    title:"新しいルーティン",
+    tasks:[]
+  });
+  save();
+}
+
+function addTask(i){
+  routines[i].tasks.push({
+    time:"07:00",
+    text:"やること"
+  });
+  save();
+}
+
+function deleteTask(i,j){
+  routines[i].tasks.splice(j,1);
+  save();
+}
+
+function deleteRoutine(i){
+  routines.splice(i,1);
+  save();
+}
+
+function render(){
+
+  let app=document.getElementById("app");
+
+  if(routines.length===0){
+    app.innerHTML=
+      '<div class="card">まだルーティンがありません。<br>下のボタンから追加しよう！</div>';
+    return;
+  }
+
+  app.innerHTML=routines.map((r,i)=>`
+
+    <div class="card">
+
+      <input
+        value="${r.title}"
+        onchange="routines[${i}].title=this.value;save()"
+      >
+
+      ${r.tasks.map((t,j)=>`
+
+        <div class="task">
+
+          <input
+            type="time"
+            step="300"
+            value="${t.time}"
+            onchange="routines[${i}].tasks[${j}].time=this.value;save()"
+          >
+
+          <input
+            value="${t.text}"
+            onchange="routines[${i}].tasks[${j}].text=this.value;save()"
+          >
+
+          <button class="delete"
+            onclick="deleteTask(${i},${j})">×</button>
+
+        </div>
+
+      `).join("")}
+
+      <button onclick="addTask(${i})">
+        ＋ 予定を追加
+      </button>
+
+      <button class="delete"
+        onclick="deleteRoutine(${i})">
+        ルーティン削除
+      </button>
+
+    </div>
+
+  `).join("");
+}
+
+render();
+
+</script>
+
+</body>
+</html>
