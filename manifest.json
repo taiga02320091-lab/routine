@@ -1,0 +1,10 @@
+{
+  "name": "ルーティン",
+  "short_name": "ルーティン",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "description": "毎日の予定を管理するルーティンアプリ",
+  "icons": []
+}
