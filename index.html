@@ -5,354 +5,381 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ルーティン</title>
 
+<link rel="manifest" href="manifest.json">
+
 <style>
 *{box-sizing:border-box}
-
 body{
- margin:0;
- background:#f5f5f7;
- color:#222;
- font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:#f5f6fa;
+  color:#222;
 }
-
 header{
- padding:28px 18px 15px;
+  background:white;
+  padding:18px;
+  font-size:24px;
+  font-weight:bold;
+  border-bottom:1px solid #ddd;
 }
-
-h1{
- margin:0;
- font-size:32px;
-}
-
-.date{
- color:#777;
- margin-top:4px;
-}
-
 main{
- max-width:700px;
- margin:auto;
- padding:10px 14px 40px;
+  max-width:700px;
+  margin:auto;
+  padding:15px;
 }
-
 .card{
- background:white;
- border-radius:20px;
- padding:16px;
- margin-bottom:14px;
- box-shadow:0 3px 12px #0001;
+  background:white;
+  border-radius:16px;
+  padding:16px;
+  margin-bottom:15px;
+  box-shadow:0 2px 8px rgba(0,0,0,.06);
 }
-
-.title{
- font-size:21px;
- font-weight:bold;
-}
-
-input{
- font:inherit;
-}
-
-input[type=text],
-input[type=time]{
- width:100%;
- padding:11px;
- border:1px solid #ddd;
- border-radius:12px;
- margin-top:8px;
-}
-
 button{
- border:0;
- border-radius:12px;
- padding:10px 14px;
- background:#222;
- color:white;
- font-weight:bold;
+  border:0;
+  border-radius:12px;
+  padding:11px 15px;
+  font-size:15px;
+  cursor:pointer;
+  background:#eee;
 }
-
-.days{
- display:flex;
- gap:5px;
- margin:12px 0;
+.primary{
+  background:#222;
+  color:white;
 }
-
-.days button{
- background:#eee;
- color:#222;
-}
-
-.days button.active{
- background:#222;
- color:white;
-}
-
-.task{
- display:grid;
- grid-template-columns:80px 1fr 35px;
- gap:7px;
- margin-top:10px;
- align-items:center;
-}
-
-.add{
- width:100%;
- margin-top:12px;
-}
-
-.delete{
- background:#ffe5e5;
- color:#b00000;
-}
-
 .tabs{
- display:flex;
- gap:7px;
- overflow:auto;
- margin-bottom:12px;
+  display:flex;
+  gap:8px;
+  overflow-x:auto;
+  margin-bottom:15px;
 }
-
 .tab{
- white-space:nowrap;
- background:#eee;
- color:#222;
+  white-space:nowrap;
 }
-
 .tab.active{
- background:#222;
- color:white;
+  background:#222;
+  color:white;
+}
+input{
+  width:100%;
+  padding:11px;
+  border:1px solid #ddd;
+  border-radius:10px;
+  font-size:16px;
+  margin:5px 0;
+}
+.task{
+  display:grid;
+  grid-template-columns:110px 1fr auto;
+  gap:7px;
+  align-items:center;
+  margin:8px 0;
+}
+.task input{
+  margin:0;
+}
+.small{
+  font-size:13px;
+  color:#777;
+}
+.days{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+}
+.day{
+  padding:8px 11px;
+}
+.day.selected{
+  background:#222;
+  color:white;
+}
+.danger{
+  background:#ffe5e5;
+  color:#c00;
 }
 </style>
 </head>
 
 <body>
 
-<header>
-<h1>ルーティン</h1>
-<div class="date" id="date"></div>
-</header>
+<header>📋 ルーティン</header>
 
 <main>
 
+<div class="card">
+  <button class="primary" onclick="enableNotifications()">
+    🔔 通知をONにする
+  </button>
+  <p id="notificationStatus" class="small">
+    通知はまだ設定されていません
+  </p>
+</div>
+
 <div class="tabs" id="tabs"></div>
 
-<div id="app"></div>
+<div class="card">
+  <button class="primary" onclick="addRoutine()">
+    ＋ ルーティンを追加
+  </button>
+</div>
 
-<button onclick="addRoutine()">＋ ルーティンを追加</button>
+<div id="routineArea"></div>
 
 </main>
 
 <script>
 
-const DAYS=["日","月","火","水","木","金","土"];
-
-let routines=JSON.parse(
- localStorage.getItem("routines") || "[]"
-);
-
-let selected=0;
-
-if(routines.length===0){
-
- routines=[
+let routines =
+JSON.parse(localStorage.getItem("routines") || "null") || [
   {
-   title:"平日の朝",
-   days:[1,2,3,4,5],
-   tasks:[
-    {time:"06:30",text:"起きる",done:false},
-    {time:"06:35",text:"着替える",done:false},
-    {time:"06:50",text:"朝ごはん",done:false}
-   ]
-  },
-  {
-   title:"夜のルーティン",
-   days:[0,1,2,3,4,5,6],
-   tasks:[
-    {time:"21:00",text:"明日の準備",done:false},
-    {time:"21:15",text:"歯みがき",done:false}
-   ]
+    title:"平日のルーティン",
+    days:[1,2,3,4,5],
+    tasks:[
+      {time:"07:00",text:"起床"},
+      {time:"07:30",text:"朝ごはん"},
+      {time:"08:00",text:"学校へ行く"}
+    ]
   }
- ];
+];
 
- save();
-
-}
+let currentRoutine = 0;
 
 function save(){
-
- localStorage.setItem(
-  "routines",
-  JSON.stringify(routines)
- );
-
- render();
-
+  localStorage.setItem("routines",JSON.stringify(routines));
 }
 
-function addRoutine(){
+function renderTabs(){
 
- routines.push({
-  title:"新しいルーティン",
-  days:[new Date().getDay()],
-  tasks:[]
- });
+  const tabs=document.getElementById("tabs");
+  tabs.innerHTML="";
 
- selected=routines.length-1;
+  routines.forEach((r,i)=>{
 
- save();
+    const b=document.createElement("button");
 
-}
+    b.className="tab"+(i===currentRoutine?" active":"");
+    b.textContent=r.title || "ルーティン"+(i+1);
 
-function addTask(){
+    b.onclick=()=>{
+      currentRoutine=i;
+      render();
+    };
 
- routines[selected].tasks.push({
-  time:"07:00",
-  text:"やること",
-  done:false
- });
-
- save();
-
-}
-
-function deleteTask(i){
-
- routines[selected].tasks.splice(i,1);
-
- save();
-
-}
-
-function deleteRoutine(){
-
- if(routines.length<=1){
-
-  alert("最後のルーティンは削除できません");
-
-  return;
-
- }
-
- routines.splice(selected,1);
-
- selected=Math.max(0,selected-1);
-
- save();
-
-}
-
-function toggleDay(day){
-
- let days=routines[selected].days;
-
- let index=days.indexOf(day);
-
- if(index===-1){
-
-  days.push(day);
-
- }else{
-
-  days.splice(index,1);
-
- }
-
- save();
-
+    tabs.appendChild(b);
+  });
 }
 
 function render(){
 
- let now=new Date();
+  renderTabs();
 
- document.getElementById("date").textContent=
-  now.getFullYear()+"年"+
-  (now.getMonth()+1)+"月"+
-  now.getDate()+"日（"+
-  DAYS[now.getDay()]+"）";
+  const r=routines[currentRoutine];
 
- document.getElementById("tabs").innerHTML=
-  routines.map((r,i)=>
-   `<button class="tab ${i===selected?"active":""}"
-    onclick="selected=${i};render()">
-    ${r.title}
-   </button>`
-  ).join("")+
-  `<button class="tab" onclick="addRoutine()">＋</button>`;
+  const area=document.getElementById("routineArea");
 
- let r=routines[selected];
+  area.innerHTML=`
+    <div class="card">
 
- document.getElementById("app").innerHTML=`
+      <h2>ルーティン設定</h2>
 
- <div class="card">
+      <input
+        value="${r.title}"
+        placeholder="ルーティン名"
+        onchange="changeTitle(this.value)"
+      >
 
-  <div class="title">ルーティン設定</div>
+      <h3>曜日</h3>
 
-  <input
-   type="text"
-   value="${r.title}"
-   onchange="routines[selected].title=this.value;save()">
+      <div class="days">
 
-  <div class="days">
+        ${["日","月","火","水","木","金","土"]
+        .map((d,i)=>`
+          <button
+            class="day ${r.days.includes(i)?"selected":""}"
+            onclick="toggleDay(${i})"
+          >${d}</button>
+        `).join("")}
 
-   ${DAYS.map((d,i)=>
-    `<button
-     class="${r.days.includes(i)?"active":""}"
-     onclick="toggleDay(${i})">
-     ${d}
-    </button>`
-   ).join("")}
+      </div>
 
-  </div>
+    </div>
 
-  <button class="delete"
-   onclick="deleteRoutine()">
-   このルーティンを削除
-  </button>
+    <div class="card">
 
- </div>
+      <h2>予定</h2>
 
- <div class="card">
+      <div id="tasks">
 
-  <div class="title">予定</div>
+        ${r.tasks.map((t,i)=>`
 
-  ${r.tasks.map((t,i)=>`
+          <div class="task">
 
-   <div class="task">
+            <input
+              type="time"
+              step="300"
+              value="${t.time}"
+              onchange="changeTime(${i},this.value)"
+            >
 
-    <input
-     type="time"
-     step="300"
-     value="${t.time}"
-     onchange="
-      routines[selected].tasks[${i}].time=this.value;
-      save()
-     ">
+            <input
+              value="${t.text}"
+              placeholder="やること"
+              onchange="changeText(${i},this.value)"
+            >
 
-    <input
-     type="text"
-     value="${t.text}"
-     onchange="
-      routines[selected].tasks[${i}].text=this.value;
-      save()
-     ">
+            <button
+              class="danger"
+              onclick="deleteTask(${i})"
+            >削除</button>
 
-    <button class="delete"
-     onclick="deleteTask(${i})">
-     ×
-    </button>
+          </div>
 
-   </div>
+        `).join("")}
 
-  `).join("")}
+      </div>
 
-  <button class="add"
-   onclick="addTask()">
-   ＋ 予定を追加
-  </button>
+      <button class="primary" onclick="addTask()">
+        ＋ 予定を追加
+      </button>
 
- </div>
+    </div>
 
- `;
+    <div class="card">
+
+      <button
+        class="danger"
+        onclick="deleteRoutine()"
+      >
+        このルーティンを削除
+      </button>
+
+    </div>
+  `;
+
+}
+
+function changeTitle(value){
+  routines[currentRoutine].title=value;
+  save();
+  renderTabs();
+}
+
+function toggleDay(day){
+
+  const r=routines[currentRoutine];
+
+  if(r.days.includes(day)){
+    r.days=r.days.filter(x=>x!==day);
+  }else{
+    r.days.push(day);
+  }
+
+  save();
+  render();
+}
+
+function changeTime(i,value){
+  routines[currentRoutine].tasks[i].time=value;
+  save();
+}
+
+function changeText(i,value){
+  routines[currentRoutine].tasks[i].text=value;
+  save();
+}
+
+function addTask(){
+
+  routines[currentRoutine].tasks.push({
+    time:"12:00",
+    text:"新しい予定"
+  });
+
+  save();
+  render();
+}
+
+function deleteTask(i){
+
+  routines[currentRoutine].tasks.splice(i,1);
+
+  save();
+  render();
+}
+
+function addRoutine(){
+
+  routines.push({
+    title:"新しいルーティン",
+    days:[],
+    tasks:[]
+  });
+
+  currentRoutine=routines.length-1;
+
+  save();
+  render();
+}
+
+function deleteRoutine(){
+
+  if(routines.length<=1){
+    alert("最後のルーティンは削除できません");
+    return;
+  }
+
+  routines.splice(currentRoutine,1);
+
+  currentRoutine=0;
+
+  save();
+  render();
+}
+
+
+// 通知許可
+
+async function enableNotifications(){
+
+  if(!("Notification" in window)){
+
+    alert("このブラウザは通知に対応していません。");
+
+    return;
+  }
+
+  const permission=await Notification.requestPermission();
+
+  const status=document.getElementById("notificationStatus");
+
+  if(permission==="granted"){
+
+    status.textContent="🔔 通知がONになっています！";
+
+    new Notification("ルーティン",{
+      body:"通知テスト成功！"
+    });
+
+  }else{
+
+    status.textContent="通知が許可されていません。";
+
+  }
+
+}
+
+
+// Service Worker登録
+
+if("serviceWorker" in navigator){
+
+  navigator.serviceWorker.register("./sw.js")
+    .then(()=>{
+      console.log("Service Worker 登録成功");
+    })
+    .catch(err=>{
+      console.log("Service Worker 登録失敗",err);
+    });
 
 }
 
